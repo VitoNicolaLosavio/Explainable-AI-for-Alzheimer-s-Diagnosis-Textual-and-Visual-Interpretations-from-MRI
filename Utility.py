@@ -1,5 +1,23 @@
 import os, warnings, torch, cv2
 import numpy as np
+import torch
+from monai.transforms import (
+    Compose,
+    CropForegroundd,
+    EnsureTyped,
+    EnsureChannelFirstd,
+    LoadImaged,
+    NormalizeIntensityd,
+    Orientationd,
+    RandAxisFlipd,
+    RandRotated,
+    RandScaleIntensityd,
+    RandShiftIntensityd,
+    Resized,
+    ScaleIntensityd,
+    Spacingd,
+    SpatialPadd
+)
 from alzheimer_disease.src.models.gradcam import GradCAM
 from alzheimer_disease.src.modules.preprocessing import get_transformations
 
@@ -93,3 +111,56 @@ def _get_heatmap_mask(image, heatmap, threshold):
                     break
     heatmap_mask[np.where((heatmap > threshold) & (bg_mask != 1))] = 1
     return heatmap_mask
+
+
+def get_transformations_transformer(size):
+    """
+	Get data transformation pipelines.
+	Args:
+		size (int): size for the input image. Final input shape will be (`size`, `size`, `size`).
+	Returns:
+		train_transform (monai.transforms.Compose): pipeline for the training input data.
+		eval_transform (monai.transforms.Compose): pipeline for the evaluation/testing input data.
+	"""
+    train_transform = Compose([
+        LoadImaged(keys='image'),
+        EnsureChannelFirstd(keys='image'),
+        EnsureTyped(keys='image', dtype=torch.float32),
+        Orientationd(keys='image', axcodes='RAS'),
+        Spacingd(
+            keys='image',
+            pixdim=(1.0, 1.0, 1.0),
+            mode='bilinear',
+            align_corners=True,
+            scale_extent=True
+        ),
+        ScaleIntensityd(keys='image', channel_wise=True),
+        CropForegroundd(
+            keys='image',
+            source_key='image',
+            select_fn=(lambda x: x > .3),
+            allow_smaller=True
+        ),
+        Resized(
+            keys='image',
+            spatial_size=size,
+            size_mode='longest',
+            mode='bilinear',
+            align_corners=True
+        ),
+        SpatialPadd(keys='image', spatial_size=(size, size, size), mode='minimum'),
+        RandAxisFlipd(keys='image', prob=0.5),
+        RandRotated(
+            keys='image',
+            prob=0.5,
+            range_x=[.4, .4],
+            range_y=[.4, .4],
+            range_z=[.4, .4],
+            padding_mode='zeros',
+            align_corners=True
+        ),
+        NormalizeIntensityd(keys='image', nonzero=True, channel_wise=True),
+        RandScaleIntensityd(keys='image', factors=0.1, prob=1.0),
+        RandShiftIntensityd(keys='image', offsets=0.1, prob=1.0)
+    ])
+    return train_transform
