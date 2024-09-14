@@ -42,4 +42,4 @@ This project is licensed under the MIT License. See the LICENSE file for more de
 
 ## Contact
 
-For any inquiries or contributions, please reach out to [Vito Nicola Losavio](mailto:v.losavio@studenti.uniba.it).
+For any inquiries or contributions, please reach out to [Vito Nicola Losavio](mailto:vito.nicola.losavio@gmail.com).
