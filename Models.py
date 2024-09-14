@@ -155,11 +155,12 @@ class Decoder(nn.Module):
         return self.fc_out(embs)
 
 
+# We define our encoder for the MRI
 class VisionEncoder3D(nn.Module):
-
     def __init__(self, image_size, channels_in, patch_size=16, hidden_size=128,
                  num_layers=3, num_heads=4):
         super(VisionEncoder3D, self).__init__()
+
 
         # Define the 3D convolutional layers
         self.conv3d_layer1 = nn.Conv3d(in_channels=channels_in, out_channels=32, kernel_size=3, stride=1, padding=1)
